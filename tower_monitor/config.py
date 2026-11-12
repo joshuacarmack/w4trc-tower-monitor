@@ -88,6 +88,7 @@ DEFAULTS: dict[str, Any] = {
         "max_sent_per_day": 3,          # hard cap on photos sent over cellular
         "storage_dir": "/var/lib/tower-monitor/photos",
         "keep_days": 120,
+        "interval": 1800,               # how often photo counters are re-sent
     },
 }
 

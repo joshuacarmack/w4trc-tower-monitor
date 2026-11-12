@@ -25,9 +25,10 @@ values never look current.
 
 ## Data budget (100 MB/month)
 
-Rough expectation: sensor traffic + MQTT keepalives ≈ 5–10 MB, Tailscale
-background ≈ 5–10 MB, photos ≈ 40 KB each with a hard cap of
-`max_sent_per_day` (default 3). Measure it during burn-in with the
+Rough expectation: sensor traffic + MQTT keepalives ≈ 10–15 MB (≈ 20k small
+messages; TCP/WireGuard overhead is most of it), Tailscale background
+≈ 5–10 MB, photos ≈ 40 KB each with a hard cap of `max_sent_per_day`
+(default 3). Measure it during burn-in with the
 *Cellular data this month* entity and tune `interval`s if needed.
 
 Run `sudo ./scripts/cellular-data-saver.sh` on the Pi to stop apt and other
