@@ -63,6 +63,29 @@ config if it does.
 * **Camera:** any UVC USB webcam with IR LEDs and auto IR-cut. Night shots
   come out black and white.
 
+## Network setup (Tailscale)
+
+The broker (EMQX, `192.168.4.34`) is reached through the tailnet's subnet
+router (JC-UTIL02 advertises `192.168.4.0/24`), so the same address works on
+the bench and over cellular:
+
+```sh
+sudo tailscale set --accept-routes=true
+```
+
+**DNS:** with `--accept-dns` on and no global nameservers in the tailnet,
+Tailscale's resolver fell back to a dead upstream and *every* lookup failed
+(the old script never resolved its broker). The Pi uses fixed resolvers
+instead, and the config uses an IP so MQTT doesn't need DNS at all:
+
+```sh
+sudo tailscale set --accept-dns=false
+printf '[main]\ndns=none\n' | sudo tee /etc/NetworkManager/conf.d/90-static-dns.conf
+sudo rm -f /etc/resolv.conf
+printf 'nameserver 8.8.8.8\nnameserver 1.1.1.1\nnameserver 9.9.9.9\n' | sudo tee /etc/resolv.conf
+sudo systemctl reload NetworkManager
+```
+
 ## Bench bring-up
 
 1. Flash Raspberry Pi OS Lite (64-bit). Re-install Sixfab and Tailscale.
