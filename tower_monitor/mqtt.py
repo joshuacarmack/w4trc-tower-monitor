@@ -117,6 +117,7 @@ class Publisher:
         c.will_set(self.availability_topic, "offline", qos=1, retain=True)
         c.reconnect_delay_set(min_delay=5, max_delay=300)
         c.on_connect = self._on_connect
+        c.on_connect_fail = self._on_connect_fail
         c.on_disconnect = self._on_disconnect
         c.on_message = self._on_message
         self.client = c
@@ -176,6 +177,11 @@ class Publisher:
         if not self._discovery_sent:
             self.send_discovery()
         self.connected.set()
+
+    def _on_connect_fail(self, client, userdata):
+        # TCP/DNS-level failure (paho retries with backoff up to 5 min).
+        log.warning("Cannot reach MQTT broker %s:%s (will retry)",
+                    self.cfg["host"], self.cfg["port"])
 
     def _on_disconnect(self, client, userdata, flags, reason_code, properties):
         self.connected.clear()
