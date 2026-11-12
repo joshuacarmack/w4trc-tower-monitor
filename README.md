@@ -62,6 +62,11 @@ pin is doing.
   connecting.** The modem takes `/dev/ttyUSB0`–`4`, so the adapter lands on
   `ttyUSB5` or later: put its `/dev/serial/by-id/...` path in the config
   (there is no default port).
+* **Power:** the LTE modem pulls short bursts of ~2 A when it powers up and
+  attaches. On the bench the Pi logged `Undervoltage detected!` for ~2 s,
+  12 s into boot, as the modem came up. At the tower use a 12 V→5 V
+  converter rated **5 V / 3 A or more**, with short, thick leads. The
+  *Pi undervoltage* entities show whether it's holding up.
 * **Camera:** any UVC USB webcam with IR LEDs and auto IR-cut. Night shots
   come out black and white.
 

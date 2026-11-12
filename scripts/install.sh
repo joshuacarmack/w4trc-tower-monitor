@@ -20,6 +20,17 @@ apt-get install -y \
     python3-venv python3-gpiozero python3-lgpio python3-pil python3-serial python3-smbus2 \
     i2c-tools fswebcam vnstat
 
+echo "==> vnstat: count the cellular interface (it may not exist until the modem is up)"
+vnstat --add -i wwan0 >/dev/null 2>&1 || true
+systemctl restart vnstat || true
+
+echo "==> Cellular: never stop retrying (default gives up after 4 failures)"
+if nmcli -t -f NAME,TYPE con show 2>/dev/null | grep -q ':gsm$'; then
+    nmcli -t -f NAME,TYPE con show | awk -F: '$2=="gsm"{print $1}' | while read -r c; do
+        nmcli con mod "$c" connection.autoconnect-retries 0
+    done
+fi
+
 echo "==> Enable I2C"
 if command -v raspi-config >/dev/null; then
     raspi-config nonint do_i2c 0
