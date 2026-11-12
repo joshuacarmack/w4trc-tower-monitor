@@ -1,0 +1,16 @@
+# Legacy script: contains a plaintext MQTT password. Never commit it.
+tower-monitor.py
+
+# Local config with secrets
+config.toml
+*.local.toml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Captured photos when running locally
+photos/
