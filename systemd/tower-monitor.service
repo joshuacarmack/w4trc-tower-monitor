@@ -1,0 +1,29 @@
+[Unit]
+Description=W4TRC tower monitor (sensors -> MQTT / Home Assistant)
+Wants=network-online.target
+After=network-online.target ModemManager.service
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=towermon
+Group=towermon
+SupplementaryGroups=gpio i2c dialout video
+WorkingDirectory=/opt/tower-monitor
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/tower-monitor/venv/bin/python -m tower_monitor -c /etc/tower-monitor/config.toml
+Restart=always
+RestartSec=15
+# Main loop pings at least every ~10 s; a hang longer than this restarts it.
+WatchdogSec=180
+# Creates /var/lib/tower-monitor owned by towermon.
+StateDirectory=tower-monitor
+StateDirectoryMode=0750
+
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

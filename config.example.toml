@@ -1,0 +1,59 @@
+# Tower monitor config. Copy to /etc/tower-monitor/config.toml (install.sh
+# does this) and fill in the MQTT section. Anything left out uses the
+# defaults in tower_monitor/config.py.
+
+[device]
+id = "tower_monitor"
+name = "Tower Monitor"
+topic_prefix = "tower"
+
+[mqtt]
+# Prefer the broker's Tailscale name/IP so traffic stays inside the tailnet.
+host = "mqtt.example.ts.net"
+port = 1883
+username = "tower"
+password = "CHANGE-ME"
+keepalive = 300
+# tls = true            # needed if you must go over the public internet
+# port = 8883
+# ca_certs = ""         # blank = system CAs
+
+[environment]
+driver = "sht4x"        # or "bme280"
+# address = 0x77        # BME280 boards are 0x76 or 0x77; SHT4x is 0x44
+interval = 600
+
+[system]
+interval = 1800
+
+[cellular]
+interval = 1800
+
+[data_usage]
+interface = "wwan0"     # check with: ip -br link  (Sixfab may be wwan0 or usb0)
+interval = 3600
+
+[mains]
+gpio = 27               # physical pin 13
+present_when_low = true
+
+[door]
+gpio = 17               # physical pin 11
+closed_when_low = true
+
+[renogy]
+port = "/dev/ttyUSB0"   # better: /dev/serial/by-id/usb-FTDI_...
+slave_id = 1
+interval = 600
+
+[camera]
+device = "/dev/video0"
+capture_resolution = "1280x720"
+max_sent_per_day = 3
+send_width = 640
+send_quality = 60
+keep_days = 120
+
+# Disable anything not wired yet:
+# [renogy]
+# enabled = false
