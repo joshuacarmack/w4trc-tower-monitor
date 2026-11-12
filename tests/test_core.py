@@ -25,7 +25,7 @@ def test_sensor_discovery_payload():
     topic, payload = msgs[0]
     assert topic == "homeassistant/sensor/tower_monitor/environment_temperature/config"
     assert payload["state_topic"] == "tower/environment/state"
-    assert payload["value_template"] == "{{ value_json.temperature }}"
+    assert payload["value_template"] == "{{ value_json.get('temperature') }}"
     assert payload["availability_topic"] == "tower/status"
     assert payload["expire_after"] == 1860
     assert payload["unique_id"] == "tower_monitor_environment_temperature"

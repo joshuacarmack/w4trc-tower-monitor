@@ -52,7 +52,7 @@ def discovery_messages(
         }
         if e.component in ("sensor", "binary_sensor"):
             payload["state_topic"] = f"{prefix}/{group}/state"
-            payload["value_template"] = "{{ value_json.%s }}" % e.key
+            payload["value_template"] = "{{ value_json.get('%s') }}" % e.key
             if expire_after:
                 payload["expire_after"] = expire_after
         if e.component == "binary_sensor":
