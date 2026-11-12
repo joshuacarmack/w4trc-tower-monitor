@@ -54,7 +54,7 @@ DEFAULTS: dict[str, Any] = {
     },
     "mains": {
         "enabled": True,
-        "gpio": 27,
+        "gpio": 23,                     # pin 16. Not 27: the Sixfab Base HAT's user LED
         # Optocoupler modules pull the pin LOW when their input is powered.
         "present_when_low": True,
         "debounce": 2.0,                # seconds
@@ -70,7 +70,7 @@ DEFAULTS: dict[str, Any] = {
     },
     "renogy": {
         "enabled": True,
-        "port": "/dev/ttyUSB0",
+        "port": "",                     # /dev/serial/by-id/usb-FTDI_... (modem owns ttyUSB0-4)
         "baudrate": 9600,
         "slave_id": 1,
         "interval": 600,

@@ -140,8 +140,11 @@ class RenogySensor(Sensor):
             return
         import minimalmodbus
         import serial
-        inst = minimalmodbus.Instrument(self.cfg.get("port", "/dev/ttyUSB0"),
-                                        int(self.cfg.get("slave_id", 1)))
+        port = self.cfg.get("port") or ""
+        if not port:
+            # Never guess /dev/ttyUSBn: the Sixfab modem owns ttyUSB0-4.
+            raise RuntimeError("renogy.port not set; use the /dev/serial/by-id/usb-FTDI_... path")
+        inst = minimalmodbus.Instrument(port, int(self.cfg.get("slave_id", 1)))
         inst.serial.baudrate = int(self.cfg.get("baudrate", 9600))
         inst.serial.bytesize = 8
         inst.serial.parity = serial.PARITY_NONE

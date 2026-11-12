@@ -30,11 +30,11 @@ interval = 1800
 interval = 1800
 
 [data_usage]
-interface = "wwan0"     # check with: ip -br link  (Sixfab may be wwan0 or usb0)
+interface = "wwan0"     # Sixfab Base HAT + LE910C4 via ModemManager/QMI
 interval = 3600
 
 [mains]
-gpio = 27               # physical pin 13
+gpio = 23               # physical pin 16 (GPIO27 is the Sixfab HAT's LED)
 present_when_low = true
 
 [door]
@@ -42,7 +42,7 @@ gpio = 17               # physical pin 11
 closed_when_low = true
 
 [renogy]
-port = "/dev/ttyUSB0"   # better: /dev/serial/by-id/usb-FTDI_...
+port = "/dev/serial/by-id/usb-FTDI_CHANGE_ME"   # ls /dev/serial/by-id/  (modem owns ttyUSB0-4)
 slave_id = 1
 interval = 600
 

@@ -36,9 +36,10 @@ timers from downloading over cellular.
 
 ## Wiring
 
-Pi header pins (physical numbering). Check the Sixfab HAT's docs to make
-sure it doesn't use GPIO17/27 on your HAT revision; change `gpio =` in the
-config if it does.
+Pi header pins (physical numbering). The Sixfab 3G/4G & LTE Base HAT
+uses GPIO27 (user LED, driven as an output by the HAT's ID EEPROM) and
+GPIO22 (user button), so mains is on GPIO23. `pinctrl get` shows what each
+pin is doing.
 
 | Signal | Pi pin | Notes |
 |---|---|---|
@@ -47,7 +48,7 @@ config if it does.
 | I2C SCL (GPIO3) | 5 | |
 | GND | 6, 9, 14 | |
 | Door (GPIO17) | 11 | Reed switch between pin 11 and GND. Closed door = LOW |
-| Mains (GPIO27) | 13 | Opto output collector → pin 13, emitter → GND |
+| Mains (GPIO23) | 16 | Opto output collector → pin 16, emitter → GND (pin 14) |
 
 * **Temp sensor:** keep the I2C cable short (< 1 m) and mount the sensor
   away from the Pi and the converter, which run warm.
@@ -58,8 +59,9 @@ config if it does.
 * **Renogy Rover:** USB-RS232 adapter (genuine FTDI) → DB9 → RJ12 into the
   Rover's RS232 port. Some RJ12 pins on the Rover carry supply voltage:
   **meter the port and confirm TX/RX/GND against Renogy's pinout before
-  connecting.** Use the `/dev/serial/by-id/...` path in the config so the
-  port name never moves.
+  connecting.** The modem takes `/dev/ttyUSB0`–`4`, so the adapter lands on
+  `ttyUSB5` or later: put its `/dev/serial/by-id/...` path in the config
+  (there is no default port).
 * **Camera:** any UVC USB webcam with IR LEDs and auto IR-cut. Night shots
   come out black and white.
 
@@ -86,6 +88,23 @@ printf 'nameserver 8.8.8.8\nnameserver 1.1.1.1\nnameserver 9.9.9.9\n' | sudo tee
 sudo systemctl reload NetworkManager
 ```
 
+## Cellular
+
+The HAT's Telit LE910C4 is run by ModemManager over QMI (`cdc-wdm0` /
+`wwan0`), with a NetworkManager `gsm` connection called `tower-cellular`.
+The Sixfab PPP scripts in `/opt/sixfab` are not used (no PPP service is
+enabled), so nothing fights ModemManager for the modem. On the bench
+Ethernet wins (route metric 100 vs 700); unplug it and traffic moves to
+`wwan0`.
+
+By default NetworkManager gives up after 4 failed attempts, which would
+leave an unattended site offline after a long cell outage. Retry forever
+instead:
+
+```sh
+sudo nmcli con mod tower-cellular connection.autoconnect-retries 0
+```
+
 ## Bench bring-up
 
 1. Flash Raspberry Pi OS Lite (64-bit). Re-install Sixfab and Tailscale.
@@ -96,7 +115,7 @@ sudo systemctl reload NetworkManager
    * `i2cdetect -y 1` → `44` (SHT4x) or `76`/`77` (BME280)
    * `ls /dev/serial/by-id/` → the FTDI adapter
    * `fswebcam -d /dev/video0 -r 1280x720 -S 30 test.jpg`
-   * `mmcli -L` and `ip -br link` (is the modem `wwan0` or `usb0`?)
+   * `mmcli -L` → `[Telit] LE910C4-NF`; `ip -br addr` → `wwan0` has an address
    * `vnstat --iflist`
 5. Try it in the foreground first:
    `sudo -u towermon /opt/tower-monitor/venv/bin/python -m tower_monitor -c /etc/tower-monitor/config.toml -v`
