@@ -6,7 +6,7 @@ Home Assistant discovery; HA does dashboards and notifications.
 | Group | What | Source |
 |---|---|---|
 | Environment | Shack temperature, humidity, dew point (+ pressure on BME280) | SHT41 or BME280 on I2C |
-| Mains | Mains power present / lost | 5 V USB charger → optocoupler → GPIO |
+| Mains | Mains power present / lost | Opto-isolated AC detection module → GPIO |
 | Door | Open/closed, last-opened time | Reed switch → GPIO |
 | Camera | Door photo, "Take photo" button, photos sent today | IR USB webcam + fswebcam |
 | Solar controller | Battery V / SOC, panel V/A/W, load, daily Ah & Wh, charge state, faults | Renogy Rover 20A, RS232 Modbus |
@@ -48,13 +48,19 @@ pin is doing.
 | I2C SCL (GPIO3) | 5 | |
 | GND | 6, 9, 14 | |
 | Door (GPIO17) | 11 | Reed switch between pin 11 and GND. Closed door = LOW |
-| Mains (GPIO23) | 16 | Opto output collector → pin 16, emitter → GND (pin 14) |
+| Mains (GPIO23) | 16 | AC module OUT → pin 16, GND → pin 14, VCC → pin 1 (3.3 V) |
 
 * **Temp sensor:** keep the I2C cable short (< 1 m) and mount the sensor
   away from the Pi and the converter, which run warm.
-* **Mains detect:** a cheap 5 V USB wall charger plugged into a mains outlet
-  feeds the optocoupler module's *input*. Mains never touches the Pi. The
-  Pi itself must run from the battery (it does, via the 12 V → 5 V converter),
+* **Mains detect:** "110V/220V AC voltage detection" module (opto-isolated,
+  "output level 3–8 V"). Mains goes only to its AC screw terminals; the
+  optocoupler isolates it from the Pi. **Power the module from 3.3 V
+  (pin 1), never 5 V:** OUT swings to VCC, and 5 V on a GPIO can kill the
+  Pi. Put it in a closed box with strain relief and a fused cord, and make
+  the AC connections unplugged. Most of these pull OUT low when AC is
+  present (`present_when_low = true`); some batches are inverted, so check
+  with the cord in and out and flip the setting if needed. The Pi itself
+  must run from the battery (it does, via the 12 V → 5 V converter),
   otherwise it can't report a mains failure.
 * **Renogy Rover:** USB-RS232 adapter (genuine FTDI) → DB9 → RJ12 into the
   Rover's RS232 port. Some RJ12 pins on the Rover carry supply voltage:
