@@ -19,6 +19,7 @@ DEFAULTS: dict[str, Any] = {
         "id": "tower_monitor",          # HA unique_id prefix; letters/digits/_ only
         "name": "Tower Monitor",        # HA device name
         "topic_prefix": "tower",        # all state topics live under this
+        "state_dir": "/var/lib/tower-monitor",
     },
     "mqtt": {
         "host": "localhost",
