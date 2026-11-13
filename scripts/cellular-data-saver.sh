@@ -39,7 +39,7 @@ EOF
         exit 1
     fi
     systemctl disable tailscaled
-    systemctl enable tower-tailscale-window.timer
+    systemctl enable --now tower-tailscale-window.timer
     /usr/local/sbin/tower-tailscale on 15
     echo "Tailscale is now on-demand: HA button, 20:00 daily and after boot (15 min)."
     echo "Undo: sudo $0 --tailscale-always-on"
@@ -47,7 +47,7 @@ EOF
 fi
 
 if [[ "${1:-}" == "--tailscale-always-on" ]]; then
-    systemctl disable tower-tailscale-window.timer
+    systemctl disable --now tower-tailscale-window.timer
     systemctl stop tower-tailscale-off.timer 2>/dev/null || true
     rm -f /run/tower-tailscale-off-at
     systemctl enable --now tailscaled
