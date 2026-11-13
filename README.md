@@ -25,14 +25,26 @@ values never look current.
 
 ## Data budget (100 MB/month)
 
-Rough expectation: sensor traffic + MQTT keepalives ≈ 10–15 MB (≈ 20k small
-messages; TCP/WireGuard overhead is most of it), Tailscale background
-≈ 5–10 MB, photos ≈ 40 KB each with a hard cap of `max_sent_per_day`
-(default 3). Measure it during burn-in with the
-*Cellular data this month* entity and tune `interval`s if needed.
+Measured on cellular (Nov 2026, apt timers already masked): a flat
+**~15 MiB/day (~450 MiB/month)**, almost none of it ours. MQTT to the broker
+was ~50 KB in a day. The rest is Tailscale:
 
-Run `sudo ./scripts/cellular-data-saver.sh` on the Pi to stop apt and other
-timers from downloading over cellular.
+| Traffic | Share |
+|---|---|
+| `log.tailscale.com` (tailscaled's own log upload) | ~30–40% |
+| DERP relay + WireGuard/STUN keepalives | most of the rest |
+| Control plane (`controlplane.tailscale.com`) | small |
+
+T-Mobile's CGNAT changes the source port per destination
+(`tailscale netcheck` → `MappingVariesByDestIP: true`), so peers can't
+connect directly and everything goes through a DERP relay.
+
+Photos are ≈ 40 KB each, capped by `max_sent_per_day` (default 3). Watch the
+*Cellular data this month* entity, or `vnstat -i wwan0 -d` on the Pi.
+
+Run `sudo ./scripts/cellular-data-saver.sh` on the Pi. It stops apt and other
+timers from downloading over cellular, and adds `--no-logs-no-support` to
+tailscaled, which turns off the log upload.
 
 ## Wiring
 
