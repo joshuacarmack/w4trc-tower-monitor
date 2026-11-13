@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# Run Tailscale only on demand, to save cellular data (it otherwise costs
+# ~9 MiB/day in relay keepalives alone). Installed as /usr/local/sbin/tower-tailscale.
+#
+#   tower-tailscale on [MINUTES]   start tailscaled; stop it after MINUTES (default 60).
+#                                  Never shortens a session that is already running.
+#   tower-tailscale off            stop tailscaled now
+#   tower-tailscale expire         called by the off timer: stops tailscaled, unless
+#                                  someone is SSH'd in over Tailscale (then +15 min)
+#   tower-tailscale request        act on the request file written by tower-monitor
+#   tower-tailscale status
+#
+# Triggers: tower-tailscale-window.timer (8 pm daily + after boot) and
+# tower-tailscale-request.path (the HA buttons, via tower-monitor).
+set -euo pipefail
+
+OFF_AT=/run/tower-tailscale-off-at          # epoch seconds; read by tower-monitor
+REQUEST=/var/lib/tower-monitor/tailscale-request
+TIMER=tower-tailscale-off
+MAX_MIN=480
+SSH_GRACE_MIN=15
+
+log() { echo "tower-tailscale: $*"; }
+
+# On-demand mode is "on" only once the window timer is enabled
+# (cellular-data-saver.sh does that after MQTT no longer needs the tailnet).
+# Until then never stop tailscaled: MQTT and the only way in depend on it.
+on_demand() { systemctl is-enabled --quiet tower-tailscale-window.timer; }
+
+arm() {   # arm <epoch>
+    local at=$1 now
+    now=$(date +%s)
+    systemctl stop "$TIMER.timer" 2>/dev/null || true
+    systemctl reset-failed "$TIMER.service" "$TIMER.timer" 2>/dev/null || true
+    systemd-run --quiet --unit="$TIMER" --on-active="$(( at > now ? at - now : 1 ))s" \
+        --timer-property=AccuracySec=10s /usr/local/sbin/tower-tailscale expire
+    echo "$at" > "$OFF_AT.tmp" && chmod 644 "$OFF_AT.tmp" && mv "$OFF_AT.tmp" "$OFF_AT"
+}
+
+cmd_on() {
+    local min=${1:-60} now want cur=0
+    [[ $min =~ ^[0-9]+$ ]] && (( min >= 1 && min <= MAX_MIN )) || { log "bad minutes: $min"; exit 2; }
+    now=$(date +%s); want=$(( now + min * 60 ))
+    if ! on_demand; then
+        systemctl start tailscaled
+        log "on-demand mode not enabled; tailscaled stays on"
+        return
+    fi
+    if systemctl is-active --quiet tailscaled && [[ -r $OFF_AT ]]; then
+        cur=$(cat "$OFF_AT" 2>/dev/null || echo 0)
+        [[ $cur =~ ^[0-9]+$ ]] || cur=0
+    fi
+    if (( cur >= want )); then
+        log "already on until $(date -d "@$cur" '+%H:%M'); leaving it"
+    else
+        systemctl start tailscaled
+        arm "$want"
+        log "on until $(date -d "@$want" '+%H:%M')"
+    fi
+}
+
+cmd_off() {
+    on_demand || { log "on-demand mode not enabled; leaving tailscaled running"; return; }
+    systemctl stop "$TIMER.timer" 2>/dev/null || true
+    rm -f "$OFF_AT"
+    systemctl stop tailscaled
+    log "off"
+}
+
+ssh_over_tailscale() {
+    # Established SSH connections whose local address is the tailnet IP.
+    ss -tnH state established '( sport = :22 )' 2>/dev/null | awk '{print $3}' | grep -q '^100\.'
+}
+
+cmd_expire() {
+    if ! on_demand; then
+        rm -f "$OFF_AT"
+        log "on-demand mode not enabled; leaving tailscaled running"
+    elif ssh_over_tailscale; then
+        arm $(( $(date +%s) + SSH_GRACE_MIN * 60 ))
+        log "SSH session active; extended $SSH_GRACE_MIN min"
+    else
+        rm -f "$OFF_AT"
+        systemctl stop tailscaled
+        log "session ended; off"
+    fi
+}
+
+cmd_request() {
+    [[ -f $REQUEST ]] || exit 0
+    local req
+    req=$(head -c 16 "$REQUEST" | tr -cd 'a-z0-9')
+    rm -f "$REQUEST"
+    case $req in
+        on)    cmd_on 60 ;;
+        off)   cmd_off ;;
+        [0-9]*) cmd_on "$req" ;;
+        *)     log "ignoring request '$req'" ;;
+    esac
+}
+
+cmd_status() {
+    on_demand && echo "mode: on-demand" || echo "mode: always on"
+    if systemctl is-active --quiet tailscaled; then
+        if [[ -r $OFF_AT ]]; then echo "on until $(date -d "@$(cat "$OFF_AT")" '+%F %H:%M')"; else echo "on (no off timer)"; fi
+    else
+        echo "off"
+    fi
+}
+
+[[ $EUID -eq 0 ]] || { echo "Run as root." >&2; exit 1; }
+case ${1:-status} in
+    on)      cmd_on "${2:-60}" ;;
+    off)     cmd_off ;;
+    expire)  cmd_expire ;;
+    request) cmd_request ;;
+    status)  cmd_status ;;
+    *)       echo "usage: $0 on [MINUTES] | off | status" >&2; exit 2 ;;
+esac

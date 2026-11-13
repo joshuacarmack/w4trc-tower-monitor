@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch for Tailscale on/off requests from tower-monitor (HA buttons)
+
+[Path]
+# tower-monitor (unprivileged) writes "on", "off" or minutes here.
+PathChanged=/var/lib/tower-monitor/tailscale-request
+Unit=tower-tailscale-request.service
+
+[Install]
+WantedBy=multi-user.target

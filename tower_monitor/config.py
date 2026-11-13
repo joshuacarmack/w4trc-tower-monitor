@@ -90,6 +90,12 @@ DEFAULTS: dict[str, Any] = {
         "keep_days": 120,
         "interval": 1800,               # how often photo counters are re-sent
     },
+    "tailscale": {
+        # HA buttons to turn Tailscale on/off. Needs scripts/tower-tailscale
+        # and its systemd units (install.sh). State changes are sent at once.
+        "enabled": True,
+        "interval": 1800,
+    },
 }
 
 

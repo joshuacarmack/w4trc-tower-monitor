@@ -1,0 +1,6 @@
+[Unit]
+Description=Apply a Tailscale on/off request from tower-monitor
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tower-tailscale request

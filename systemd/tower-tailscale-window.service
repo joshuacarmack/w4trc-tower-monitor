@@ -1,0 +1,6 @@
+[Unit]
+Description=Tailscale window: on for 15 minutes
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tower-tailscale on 15

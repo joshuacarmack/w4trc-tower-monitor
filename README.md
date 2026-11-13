@@ -88,6 +88,29 @@ pin is doing.
 * **Camera:** any UVC USB webcam with IR LEDs and auto IR-cut. Night shots
   come out black and white.
 
+## Tailscale on demand
+
+Even idle, Tailscale costs ~9 MiB/day over cellular, about 3× the plan.
+Once MQTT goes straight to the public broker over TLS, Tailscale can run
+only when needed:
+
+* **HA buttons** *Tailscale on (1 h)* / *Tailscale off*, plus *Tailscale*
+  (running) and *Tailscale turns off at*.
+* **Daily window:** 20:00 for 15 min, and for 15 min after every boot, as a
+  way in if MQTT is broken.
+* A session never cuts off a live SSH login over Tailscale: it extends 15 min
+  at a time while one is open.
+
+```sh
+sudo tower-tailscale status | on [MINUTES] | off
+sudo ./scripts/cellular-data-saver.sh --tailscale-on-demand   # refuses unless [mqtt] is public + TLS
+sudo ./scripts/cellular-data-saver.sh --tailscale-always-on   # undo
+```
+
+Until on-demand mode is enabled, `tower-tailscale` never stops tailscaled,
+so the buttons are harmless on the bench. Turn off **key expiry** for this
+node in the Tailscale admin console, or it will need a login after 180 days.
+
 ## Network setup (Tailscale)
 
 The broker (EMQX, `192.168.4.34`) is reached through the tailnet's subnet

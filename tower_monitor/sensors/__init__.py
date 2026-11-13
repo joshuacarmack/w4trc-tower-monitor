@@ -23,6 +23,7 @@ REGISTRY: dict[str, tuple[str, str]] = {
     "door": ("gpio_inputs", "DoorSensor"),
     "renogy": ("renogy", "RenogySensor"),
     "camera": ("camera", "Camera"),
+    "tailscale": ("tailscale", "TailscaleSensor"),
 }
 
 

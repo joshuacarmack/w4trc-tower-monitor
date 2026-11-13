@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Tailscale window (fallback SSH access if MQTT is down)
+
+[Timer]
+OnCalendar=*-*-* 20:00:00
+# Also right after boot, e.g. when someone at the site has just power-cycled it.
+OnBootSec=2min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

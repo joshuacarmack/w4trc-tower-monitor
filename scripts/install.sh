@@ -64,8 +64,17 @@ fi
 
 echo "==> systemd"
 install -m 644 "$SRC/systemd/tower-monitor.service" /etc/systemd/system/
+install -m 755 "$SRC/scripts/tower-tailscale" /usr/local/sbin/tower-tailscale
+for u in tower-tailscale-request.path tower-tailscale-request.service \
+         tower-tailscale-window.timer tower-tailscale-window.service; do
+    install -m 644 "$SRC/systemd/$u" /etc/systemd/system/
+done
 systemctl daemon-reload
 systemctl enable tower-monitor.service
+# HA "Tailscale on/off" buttons. Harmless while tailscaled is always on:
+# tower-tailscale only stops it once cellular-data-saver.sh --tailscale-on-demand
+# has enabled the window timer.
+systemctl enable --now tower-tailscale-request.path
 
 if [[ "${NEW_CONFIG:-0}" == 1 ]]; then
     echo
